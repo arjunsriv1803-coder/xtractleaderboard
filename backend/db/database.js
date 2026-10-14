@@ -646,6 +646,10 @@ class Database {
     return this.getAllTeams()
       .map((team) => {
         const stagesCompleted = Object.keys(team.stageProgress || {}).length;
+        const solveTimes = Object.values(team.stageProgress || {})
+          .map((p) => (p && p.solvedAt ? new Date(p.solvedAt).getTime() : 0))
+          .filter((ts) => ts > 0);
+        const lastSolvedAt = solveTimes.length ? Math.max(...solveTimes) : null;
         return {
           teamId: team.id,
           name: team.name,
@@ -657,13 +661,20 @@ class Database {
           stage: stagesCompleted < 4 ? stagesCompleted + 1 : 4,
           stagesCompleted,
           disqualified: !!team.disqualified,
-          stageProgress: team.stageProgress || {}
+          stageProgress: team.stageProgress || {},
+          lastSolvedAt
         };
       })
       .sort((a, b) => {
         if (a.disqualified !== b.disqualified) return a.disqualified ? 1 : -1;
         if (b.score !== a.score) return b.score - a.score;
-        return b.stagesCompleted - a.stagesCompleted;
+        // Tied points: whoever reached that score first ranks higher
+        if (a.lastSolvedAt !== null && b.lastSolvedAt !== null && a.lastSolvedAt !== b.lastSolvedAt) {
+          return a.lastSolvedAt - b.lastSolvedAt;
+        }
+        if (a.lastSolvedAt !== null && b.lastSolvedAt === null) return -1;
+        if (a.lastSolvedAt === null && b.lastSolvedAt !== null) return 1;
+        return (a.teamName || '').localeCompare(b.teamName || '');
       })
       .map((team, index) => ({
         ...team,

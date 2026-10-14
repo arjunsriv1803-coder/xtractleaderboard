@@ -14,7 +14,7 @@ const TABLES_PER_PAGE = 2; // tables shown side by side on one page
  * Sort the raw leaderboard list:
  * 1. Active teams ahead of disqualified teams.
  * 2. Highest points/score first.
- * 3. For teams with tied points, order by earliest submission timestamp.
+ * 3. For teams with tied points, whoever reached that score first ranks higher.
  * 4. Deterministic alphabetical tie-breaker.
  */
 const sortLeaderboard = (rawList) => {
@@ -35,9 +35,9 @@ const sortLeaderboard = (rawList) => {
             return scoreB - scoreA;
         }
 
-        // 2. Earliest submission first for tied points
-        const tsA = a.firstSubmissionAt ? new Date(a.firstSubmissionAt).getTime() : (a.lastSolvedAt ? new Date(a.lastSolvedAt).getTime() : null);
-        const tsB = b.firstSubmissionAt ? new Date(b.firstSubmissionAt).getTime() : (b.lastSolvedAt ? new Date(b.lastSolvedAt).getTime() : null);
+        // 2. For tied points, whoever reached that score first (earliest last correct solve)
+        const tsA = a.lastSolvedAt ? new Date(a.lastSolvedAt).getTime() : null;
+        const tsB = b.lastSolvedAt ? new Date(b.lastSolvedAt).getTime() : null;
 
         // Both have a submission time — earlier wins
         if (tsA !== null && tsB !== null) {

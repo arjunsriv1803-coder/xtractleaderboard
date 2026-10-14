@@ -16,7 +16,8 @@ const TRACK_NAMES = {
  * Deterministic ranking rules:
  * 1. Active teams rank ahead of disqualified teams.
  * 2. Higher points rank first.
- * 3. Teams with identical points are ranked by earliest submission timestamp.
+ * 3. Teams with identical points are ranked by who reached that score first
+ *    (timestamp of their latest correct submission; earlier wins).
  * 4. Alphabetical tie-breaker.
  */
 export const getAuthoritativeLeaderboard = async () => {
@@ -58,9 +59,11 @@ export const getAuthoritativeLeaderboard = async () => {
       });
     });
 
-    // Also check Submission model to catch any submissions
+    // Also check Submission model to catch any correct solves missing from submitted_teams.
+    // Wrong answers are ignored: they don't change a team's score, so they must not affect tie-breaks.
     try {
-      const submissions = await Submission.find({}, 'team_id timestamp').lean();
+      const submissions = await Submission.find({ is_correct: true }, 'team_id timestamp').lean();
+      const lastCorrectSubmissionMap = {};
       submissions.forEach((sub) => {
         if (sub.team_id && sub.timestamp) {
           const tid = sub.team_id.toUpperCase();
@@ -68,6 +71,16 @@ export const getAuthoritativeLeaderboard = async () => {
           if (ts > 0 && (firstSubmissionAtMap[tid] === undefined || ts < firstSubmissionAtMap[tid])) {
             firstSubmissionAtMap[tid] = ts;
           }
+          if (ts > (lastCorrectSubmissionMap[tid] || 0)) {
+            lastCorrectSubmissionMap[tid] = ts;
+          }
+        }
+      });
+      // Question.submitted_teams is authoritative (one entry per solved stage); only fall back
+      // to Submission rows for teams it has no record of.
+      Object.keys(lastCorrectSubmissionMap).forEach((tid) => {
+        if (!lastSolvedAtMap[tid]) {
+          lastSolvedAtMap[tid] = lastCorrectSubmissionMap[tid];
         }
       });
     } catch (e) {
@@ -104,7 +117,7 @@ export const getAuthoritativeLeaderboard = async () => {
     // 4. Deterministic Sort:
     // Rule 1: Non-disqualified before Disqualified
     // Rule 2: Highest points first
-    // Rule 3: For tied points, earlier submission first
+    // Rule 3: For tied points, whoever reached that score first (earliest last-correct-solve)
     // Rule 4: Alphabetical tie-breaker
     mapped.sort((a, b) => {
       if (a.disqualified !== b.disqualified) {
@@ -115,8 +128,8 @@ export const getAuthoritativeLeaderboard = async () => {
         return b.points - a.points;
       }
 
-      const tsA = a.firstSubmissionAt ? new Date(a.firstSubmissionAt).getTime() : (a.lastSolvedAt ? new Date(a.lastSolvedAt).getTime() : null);
-      const tsB = b.firstSubmissionAt ? new Date(b.firstSubmissionAt).getTime() : (b.lastSolvedAt ? new Date(b.lastSolvedAt).getTime() : null);
+      const tsA = a.lastSolvedAt ? new Date(a.lastSolvedAt).getTime() : null;
+      const tsB = b.lastSolvedAt ? new Date(b.lastSolvedAt).getTime() : null;
 
       if (tsA !== null && tsB !== null) {
         if (tsA !== tsB) return tsA - tsB;
