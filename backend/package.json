@@ -1,0 +1,36 @@
+{
+  "name": "hackathon-backend",
+  "version": "1.0.0",
+  "description": "Hackathon team management backend with path assignment and admin control room",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node utils/seed.js",
+    "generate:qr": "node scripts/generateQRs.js"
+  },
+  "keywords": [
+    "hackathon",
+    "express",
+    "jwt",
+    "mongodb",
+    "http-api",
+    "xtract"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.1",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.8.4",
+    "ws": "^8.22.0"
+  }
+}
