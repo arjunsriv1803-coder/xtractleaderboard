@@ -27,8 +27,6 @@ coverage/
 .vite/
 **/.vite/
 
-# Frontend is deployed and maintained separately
-frontend/
 
 # Runtime data and temporary files
 tmp/

@@ -1,0 +1,429 @@
+.lb-viewport-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* scrolls only when the content is taller than the screen (small screens) */
+    background-color: #000000;
+    font-family: "Jockey One", sans-serif;
+    color: #ffffff;
+}
+
+.lb-full-screen-bg {
+    position: fixed;
+    /* stays put while the tables scroll over it */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.lb-back-btn {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 100;
+    padding: 10px 20px;
+    background: rgba(11, 15, 24, 0.85);
+    color: #f0d089;
+    border: 1px solid rgba(201, 162, 74, 0.5);
+    border-radius: 8px;
+    font-family: "Jockey One", sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(201, 162, 74, 0.25);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lb-back-btn:hover {
+    background: rgba(26, 35, 53, 0.95);
+    border-color: #f0d089;
+    box-shadow: 0 0 24px rgba(240, 208, 137, 0.45);
+    transform: translateY(-1px);
+}
+
+.lb-artboard {
+    position: absolute;
+    top: calc(42% - 540px * var(--artboard-scale, 1));
+    /* Centred on 42% (shifted up from 45%) to align within the black display screen. */
+    left: 50vw;
+    /* vw, not %, so a scrollbar appearing does not nudge the tables sideways */
+    width: 1920px;
+    min-height: 1080px;
+    padding-bottom: 40px;
+    transform: translateX(-50%) scale(var(--artboard-scale, 1));
+    transform-origin: top center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lb-heading-title {
+    margin: 10px 0 20px 0;
+    /* Reduced top/bottom margins */
+    font-family: "Jockey One", sans-serif;
+    font-size: 64px;
+    color: #ffffff;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+    letter-spacing: 2px;
+}
+
+/* Arrows either side of the tables, page indicator underneath. */
+.lb-pager {
+    display: grid;
+    grid-template-columns: 72px 1200px 72px;
+    grid-template-areas:
+        "prev pages next"
+        ". indicator .";
+    column-gap: 28px;
+    align-items: center;
+}
+
+/* All pages are stacked in one cell, so the area is always as big as the
+   fullest page and switching pages never moves anything. */
+.lb-pages {
+    grid-area: pages;
+    display: grid;
+    /* Cuts off pages as they slide past the edges, with just enough margin to
+       keep the tables' own 20px shadow and stay clear of the arrows. */
+    clip-path: inset(-40px -24px);
+}
+
+.lb-page {
+    grid-area: 1 / 1;
+}
+
+.lb-page--hidden {
+    visibility: hidden;
+}
+
+/* Page change: a crossfade with a short nudge. The old and new pages overlap in
+   the same grid cell and animate together, each moving only 48px. Only transform
+   and opacity are animated; will-change lives on these classes, so it is dropped
+   as soon as the transition ends and they are removed. */
+.lb-page--enter-next,
+.lb-page--enter-prev,
+.lb-page--leave-next,
+.lb-page--leave-prev {
+    animation-duration: 550ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+.lb-page--enter-next {
+    animation-name: lb-page-in-from-right;
+}
+
+.lb-page--leave-next {
+    animation-name: lb-page-out-to-left;
+}
+
+.lb-page--enter-prev {
+    animation-name: lb-page-in-from-left;
+}
+
+.lb-page--leave-prev {
+    animation-name: lb-page-out-to-right;
+}
+
+@keyframes lb-page-in-from-right {
+    from { opacity: 0; transform: translate3d(48px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes lb-page-out-to-left {
+    from { opacity: 1; transform: translate3d(0, 0, 0); }
+    to { opacity: 0; transform: translate3d(-48px, 0, 0); }
+}
+
+@keyframes lb-page-in-from-left {
+    from { opacity: 0; transform: translate3d(-48px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes lb-page-out-to-right {
+    from { opacity: 1; transform: translate3d(0, 0, 0); }
+    to { opacity: 0; transform: translate3d(48px, 0, 0); }
+}
+
+@keyframes lb-page-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes lb-page-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Reduced motion: no sliding, just a short cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+    .lb-page--enter-next,
+    .lb-page--enter-prev {
+        animation: lb-page-fade-in 150ms linear both;
+        will-change: opacity;
+    }
+
+    .lb-page--leave-next,
+    .lb-page--leave-prev {
+        animation: lb-page-fade-out 150ms linear both;
+        will-change: opacity;
+    }
+}
+
+.lb-tables-flex-row {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.lb-page-arrow {
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    font-size: 34px;
+    line-height: 1;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+}
+
+.lb-page-arrow--prev {
+    grid-area: prev;
+}
+
+.lb-page-arrow--next {
+    grid-area: next;
+}
+
+.lb-page-arrow:hover,
+.lb-page-arrow:focus-visible {
+    background: #ffffff;
+    color: #000000;
+    outline: none;
+}
+
+/* Nowhere to go: hidden, but still holding its space. */
+.lb-page-arrow:disabled {
+    visibility: hidden;
+}
+
+.lb-page-indicator {
+    grid-area: indicator;
+    justify-self: center;
+    margin-top: 14px;
+    font-size: 28px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+/* Half the row, so a lone table on the last page keeps the usual width and sits centred. */
+.lb-table-container {
+    flex: 0 0 calc((100% - 40px) / 2);
+    background: rgba(0, 0, 0, 0.75);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+.lb-grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.lb-grid-table th {
+    border: 2px solid #ffffff;
+    padding: 12px;
+    font-size: 32px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.9);
+    letter-spacing: 1px;
+}
+
+.lb-th-teams {
+    width: 70%;
+}
+
+.lb-th-score {
+    width: 30%;
+}
+
+.lb-grid-table td {
+    border: 2px solid #ffffff;
+    height: 52px;
+    /* Slightly reduced height from 58px */
+    padding: 0 15px;
+    vertical-align: middle;
+}
+
+.lb-td-team {
+    text-align: left;
+}
+
+.lb-td-score {
+    text-align: center;
+    font-size: 36px;
+}
+
+.lb-team-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.lb-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    flex-shrink: 0;
+    font-size: 28px;
+}
+
+.lb-wreath-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lb-wreath-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.lb-wreath-num {
+    position: relative;
+    z-index: 2;
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.lb-num-1 {
+    transform: translateY(-1px);
+}
+
+.lb-num-2 {
+    transform: translateY(-1px);
+}
+
+.lb-num-3 {
+    transform: translateY(-1px);
+}
+
+.lb-team-name-text {
+    font-size: 28px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+/* ---- Small screens: no scaled artboard — the tables stack and the page scrolls ---- */
+@media (max-width: 860px) {
+    .lb-artboard {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 100%;
+        min-height: 100%;
+        padding: 24px 16px 32px;
+        transform: none;
+    }
+
+    .lb-heading-title {
+        margin: 0 0 16px 0;
+        font-size: 36px;
+        text-align: center;
+    }
+
+    /* Arrows and indicator move into a bar above the stacked tables. */
+    .lb-pager {
+        grid-template-columns: 48px 1fr 48px;
+        grid-template-areas:
+            "prev indicator next"
+            "pages pages pages";
+        column-gap: 12px;
+        row-gap: 16px;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    .lb-tables-flex-row {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 20px;
+    }
+
+    .lb-table-container {
+        flex: 0 0 auto;
+    }
+
+    .lb-page-arrow {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+    }
+
+    .lb-page-indicator {
+        margin-top: 0;
+        font-size: 22px;
+    }
+
+    .lb-grid-table th {
+        padding: 8px;
+        font-size: 22px;
+    }
+
+    .lb-grid-table td {
+        height: 44px;
+        padding: 0 10px;
+    }
+
+    .lb-td-score {
+        font-size: 24px;
+    }
+
+    .lb-rank-badge {
+        width: 36px;
+        font-size: 20px;
+    }
+
+    .lb-wreath-wrapper {
+        width: 34px;
+        height: 34px;
+    }
+
+    .lb-wreath-num {
+        font-size: 16px;
+    }
+
+    .lb-team-name-text {
+        font-size: 20px;
+    }
+}
